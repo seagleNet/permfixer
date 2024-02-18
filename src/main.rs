@@ -1,10 +1,13 @@
 use inotify::{EventMask, Inotify, WatchMask};
+use serde::Deserialize;
 use std::collections::HashMap;
+use std::env;
 use std::fs::{self, set_permissions};
 use std::os::unix::fs::{chown, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
+#[derive(Deserialize)]
 struct PermMapping {
     path: PathBuf,
     uid: u32,
@@ -13,27 +16,24 @@ struct PermMapping {
     dmode: u32,
 }
 
+#[derive(Deserialize)]
+struct Config {
+    perm_mapping: Vec<PermMapping>,
+}
+
 fn main() {
+    // Read config file path from command line
+    let args: Vec<String> = env::args().collect();
+    let config_path = &args[1];
+
+    // Parse config file
+    let config = fs::read_to_string(config_path).expect("Failed to read config file");
+    let parsed_config: Config = toml::from_str(&config).unwrap();
+    let perm_mappings = parsed_config.perm_mapping;
+
     let mut watches: HashMap<i32, PathBuf> = HashMap::new();
 
     let mut inotify = Inotify::init().expect("Error while initializing inotify instance");
-
-    let perm_mappings = vec![
-        PermMapping {
-            path: PathBuf::from("/home/freyja/extern"),
-            uid: 1001,
-            gid: 1001,
-            fmode: 0o640,
-            dmode: 0o750,
-        },
-        PermMapping {
-            path: PathBuf::from("/home/freyja/intern"),
-            uid: 1002,
-            gid: 1002,
-            fmode: 0o660,
-            dmode: 0o770,
-        },
-    ];
 
     // Watch for modify and close events.
     for path in perm_mappings.iter().map(|m| &m.path) {
