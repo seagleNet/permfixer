@@ -5,7 +5,6 @@ use std::env;
 use std::fs::{self, set_permissions};
 use std::os::unix::fs::{chown, PermissionsExt};
 use std::path::{Path, PathBuf};
-use std::process::exit;
 
 #[derive(Deserialize)]
 struct PermMapping {
@@ -37,14 +36,14 @@ fn main() {
 
     // Watch for modify and close events.
     for path in perm_mappings.iter().map(|m| &m.path) {
-        let perm = map_permission(&perm_mappings, path);
+        if let Some(perm) = map_permission(&perm_mappings, path) {
+            // add configured dir
+            add_watch(&mut inotify, path, &mut watches);
+            chown_and_chmod(perm, path, true);
 
-        // add configured dir
-        add_watch(&mut inotify, path, &mut watches);
-        chown_and_chmod(perm, path, true);
-
-        // find additional dirs
-        crawl_path(&mut inotify, path, &mut watches, perm);
+            // find additional dirs
+            crawl_path(&mut inotify, path, &mut watches, perm);
+        }
     }
 
     // Read events that were added with `Watches::add` above.
@@ -61,16 +60,16 @@ fn main() {
             let path = PathBuf::from(p).join(event.name.unwrap_or_default());
 
             if event.mask.contains(EventMask::CREATE) || event.mask.contains(EventMask::MOVED_TO) {
-                let perm = map_permission(&perm_mappings, &path);
-
-                if event.mask.contains(EventMask::ISDIR) {
-                    println!("Directory created: {}", path.display());
-                    add_watch(&mut inotify, &path, &mut watches);
-                    chown_and_chmod(perm, &path, true);
-                    crawl_path(&mut inotify, &path, &mut watches, perm);
-                } else {
-                    println!("File created: {}", path.display());
-                    chown_and_chmod(perm, &path, false);
+                if let Some(perm) = map_permission(&perm_mappings, &path) {
+                    if event.mask.contains(EventMask::ISDIR) {
+                        println!("Directory created: {}", path.display());
+                        add_watch(&mut inotify, &path, &mut watches);
+                        chown_and_chmod(perm, &path, true);
+                        crawl_path(&mut inotify, &path, &mut watches, perm);
+                    } else {
+                        println!("File created: {}", path.display());
+                        chown_and_chmod(perm, &path, false);
+                    }
                 }
             } else if event.mask.contains(EventMask::DELETE) {
                 if event.mask.contains(EventMask::ISDIR) {
@@ -100,15 +99,15 @@ fn add_watch(inotify: &mut Inotify, path: &PathBuf, watches: &mut HashMap<i32, P
     watches.insert(wd_id, path.to_path_buf());
 }
 
-fn map_permission<'a>(perm_mappings: &'a Vec<PermMapping>, path: &Path) -> &'a PermMapping {
+fn map_permission<'a>(perm_mappings: &'a Vec<PermMapping>, path: &Path) -> Option<&'a PermMapping> {
     for mapping in perm_mappings {
         if path.starts_with(&mapping.path) {
-            return mapping;
+            return Some(mapping);
         }
     }
 
     eprintln!("No mapping found for {}", path.display());
-    exit(1);
+    None
 }
 
 fn crawl_path(
