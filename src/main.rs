@@ -5,6 +5,7 @@ use std::env;
 use std::fs::{self, set_permissions};
 use std::os::unix::fs::{chown, PermissionsExt};
 use std::path::{Path, PathBuf};
+use std::process::exit;
 
 // Define the structure of the config file
 #[derive(Deserialize)]
@@ -22,6 +23,12 @@ struct Config {
 }
 
 fn main() {
+    // Check if the program is run as root
+    if !am_root() {
+        eprintln!("This program must be run as root");
+        exit(1);
+    }
+
     // Read config file path from command line
     let args: Vec<String> = env::args().collect();
     let config_path = &args[1];
@@ -92,6 +99,15 @@ fn main() {
             }
         }
     }
+}
+
+// Check if the program is run as root
+fn am_root() -> bool {
+    match env::var("USER") {
+        Ok(val) => val == "root",
+        Err(_e) => false,
+    }
+
 }
 
 // Add a watch for a given path and store the watch descriptor and path in a hashmap
