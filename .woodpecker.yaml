@@ -5,6 +5,8 @@ steps:
       - cargo check
       - cargo test -- --include-ignored
   build:
+    when:
+      event: tag
     image: rust:1.76-slim
     commands:
       - cargo build --release
