@@ -167,3 +167,46 @@ fn chown_and_chmod(perm: &PermMapping, path: &PathBuf, is_dir: bool) {
     chown(path, Some(uid), Some(gid)).expect("Failed to change owner");
     set_permissions(path, fs::Permissions::from_mode(mode)).expect("Failed to change permissions");
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_add_watch() {
+        let mut inotify = Inotify::init().unwrap();
+        let mut watches: HashMap<i32, PathBuf> = HashMap::new();
+        let path = PathBuf::from("/tmp");
+
+        add_watch(&mut inotify, &path, &mut watches);
+        assert_eq!(watches.len(), 1);
+    }
+
+    #[test]
+    fn test_map_permission() {
+        let perm_mappings = vec![
+            PermMapping {
+                path: PathBuf::from("/etc"),
+                uid: 0,
+                gid: 0,
+                fmode: 0o644,
+                dmode: 0o755,
+            },
+            PermMapping {
+                path: PathBuf::from("/var"),
+                uid: 0,
+                gid: 0,
+                fmode: 0o644,
+                dmode: 0o755,
+            },
+        ];
+
+        let path = PathBuf::from("/etc/hosts");
+        let mapping = map_permission(&perm_mappings, &path).unwrap();
+        assert_eq!(mapping.path, PathBuf::from("/etc"));
+        assert_eq!(mapping.uid, 0);
+        assert_eq!(mapping.gid, 0);
+        assert_eq!(mapping.fmode, 0o644);
+        assert_eq!(mapping.dmode, 0o755);
+    }
+}
