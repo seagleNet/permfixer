@@ -1,5 +1,7 @@
 # permfixer
 
+[![woodpecker-ci](https://ci.seagle.sh/api/badges/1/status.svg)](https://ci.seagle.sh/repos/1)
+
 A little tool that watches directories and makes sure all files and directories are in line with the configured owner, group and mode.
 
 Configuration can be defined in toml format and passed via command argument.
