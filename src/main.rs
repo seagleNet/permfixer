@@ -107,7 +107,6 @@ fn am_root() -> bool {
         Ok(val) => val == "root",
         Err(_e) => false,
     }
-
 }
 
 // Add a watch for a given path and store the watch descriptor and path in a hashmap
@@ -187,8 +186,14 @@ fn chown_and_chmod(perm: &PermMapping, path: &PathBuf, is_dir: bool) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::{
+        fs::{create_dir, create_dir_all, remove_dir, remove_dir_all, remove_file, File},
+        os::linux::fs::MetadataExt,
+    };
+    use sequential_test::{sequential, parallel};
 
     #[test]
+    #[parallel]
     fn add_watch_test() {
         let mut inotify = Inotify::init().unwrap();
         let mut watches: HashMap<i32, PathBuf> = HashMap::new();
@@ -199,6 +204,7 @@ mod test {
     }
 
     #[test]
+    #[parallel]
     fn map_permission_test() {
         let perm_mappings = vec![
             PermMapping {
@@ -224,5 +230,65 @@ mod test {
         assert_eq!(mapping.gid, 0);
         assert_eq!(mapping.fmode, 0o644);
         assert_eq!(mapping.dmode, 0o755);
+    }
+
+    #[test]
+    #[ignore]
+    #[sequential]
+    fn chown_and_chmod_test() {
+        let perm = PermMapping {
+            path: PathBuf::from("/tmp"),
+            uid: 1000,
+            gid: 1000,
+            fmode: 0o644,
+            dmode: 0o755,
+        };
+
+        let file = PathBuf::from("/tmp/foo.txt");
+        File::create(&file).expect("Failed to create file");
+        chown_and_chmod(&perm, &file, false);
+
+        let file_meta = fs::metadata(&file).unwrap();
+        remove_file(file).expect("Failed to remove file");
+        assert_eq!(file_meta.st_mode() & 0o777, 0o644);
+        assert_eq!(file_meta.st_uid(), 1000);
+        assert_eq!(file_meta.st_gid(), 1000);
+
+        let dir = PathBuf::from("/tmp/foo");
+        create_dir(&dir).expect("Failed to create dir");
+        chown_and_chmod(&perm, &dir, true);
+
+        let dir_meta = fs::metadata(&dir).unwrap();
+        remove_dir(dir).expect("Failed to remove dir");
+        assert_eq!(dir_meta.st_mode() & 0o777, 0o755);
+        assert_eq!(dir_meta.st_uid(), 1000);
+        assert_eq!(dir_meta.st_gid(), 1000);
+    }
+
+    #[test]
+    #[ignore]
+    #[sequential]
+    fn crawl_path_test() {
+        let path = PathBuf::from("/tmp/foo/bar");
+        create_dir_all(&path).expect("Failed to create dir");
+        File::create(&path.join("file.txt")).expect("Failed to create file");
+
+        let mut inotify = Inotify::init().unwrap();
+        let mut watches: HashMap<i32, PathBuf> = HashMap::new();
+        let perm = PermMapping {
+            path: PathBuf::from("/tmp/foo"),
+            uid: 1000,
+            gid: 1000,
+            fmode: 0o644,
+            dmode: 0o755,
+        };
+
+        let path = PathBuf::from("/tmp/foo");
+        add_watch(&mut inotify, &path, &mut watches);
+        crawl_path(&mut inotify, &path, &mut watches, &perm);
+
+        let watches_len = watches.len();
+        remove_dir_all(path).expect("Failed to remove dir");
+        assert_eq!(watches_len, 2);
     }
 }
