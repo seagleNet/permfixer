@@ -1,6 +1,3 @@
-when:
-  event: tag
-
 steps:
   test:
     image: rust:1.76-slim
@@ -12,6 +9,8 @@ steps:
     commands:
       - cargo build --release
   publish:
+    when:
+      event: tag
     image: woodpeckerci/plugin-gitea-release
     settings:
         base_url: https://git.seagle.sh
