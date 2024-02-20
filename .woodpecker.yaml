@@ -1,0 +1,19 @@
+steps:
+  test:
+    image: rust:1.76-slim
+    commands:
+      - cargo check
+      - cargo test -- --include-ignored
+  build:
+    image: rust:1.76-slim
+    commands:
+      - cargo build --release
+  publish:
+    image: woodpeckerci/plugin-gitea-release
+    settings:
+        base_url: https://git.seagle.sh
+        files:
+          - "target/release/permfixer"
+        api_key:
+          from_secret: GITEA_ACCESS_TOKEN
+        target: main
