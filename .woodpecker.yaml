@@ -15,5 +15,5 @@ steps:
         files:
           - "target/release/permfixer"
         api_key:
-          from_secret: GITEA_ACCESS_TOKEN
+          from_secret: FORGEJO_ACCESS_TOKEN
         target: main
