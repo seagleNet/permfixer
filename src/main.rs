@@ -173,7 +173,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_add_watch() {
+    fn add_watch_test() {
         let mut inotify = Inotify::init().unwrap();
         let mut watches: HashMap<i32, PathBuf> = HashMap::new();
         let path = PathBuf::from("/tmp");
@@ -183,7 +183,7 @@ mod test {
     }
 
     #[test]
-    fn test_map_permission() {
+    fn map_permission_test() {
         let perm_mappings = vec![
             PermMapping {
                 path: PathBuf::from("/etc"),
