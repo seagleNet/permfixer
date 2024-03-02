@@ -186,11 +186,11 @@ fn chown_and_chmod(perm: &PermMapping, path: &PathBuf, is_dir: bool) {
 #[cfg(test)]
 mod test {
     use super::*;
+    use sequential_test::{parallel, sequential};
     use std::{
         fs::{create_dir, create_dir_all, remove_dir, remove_dir_all, remove_file, File},
         os::linux::fs::MetadataExt,
     };
-    use sequential_test::{sequential, parallel};
 
     #[test]
     #[parallel]
