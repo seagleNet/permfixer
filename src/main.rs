@@ -1,5 +1,5 @@
 use inotify::{EventMask, Inotify, WatchMask};
-use nix::unistd::Uid;
+use nix::unistd::{Gid, Group, Uid, User};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
@@ -47,9 +47,33 @@ fn main() {
     let mut buffer = [0; 1024];
 
     // Add watches for configured directories
-    for path in perm_mappings.iter().map(|m| &m.path) {
+    for mapping in &perm_mappings {
+        let path = &mapping.path;
+        let uid = Uid::from(mapping.uid);
+        let gid = Gid::from(mapping.gid);
+
         if path.as_path().exists() {
             if path.is_dir() {
+                // Check if the configured user and group exist
+                if User::from_uid(uid).is_err() {
+                    eprintln!("No such user with uid: {}", uid);
+                    exit(1);
+                }
+                if Group::from_gid(gid).is_err() {
+                    eprintln!("No such group with gid: {}", gid);
+                    exit(1);
+                }
+
+                // Check if the configured modes are valid
+                if !is_valid_mode(mapping.fmode) {
+                    eprintln!("Invalid mode: {}, exiting", mapping.fmode);
+                    exit(1);
+                }
+                if !is_valid_mode(mapping.dmode) {
+                    eprintln!("Invalid mode: {}, exiting", mapping.dmode);
+                    exit(1);
+                }
+
                 if let Some(perm) = map_permission(&perm_mappings, path) {
                     // Add configured dir to watches and set permissions
                     add_watch(&mut inotify, path, &mut watches);
@@ -122,6 +146,10 @@ fn main() {
             }
         }
     }
+}
+
+fn is_valid_mode(perm: u32) -> bool {
+    perm <= 0o777
 }
 
 // Add a watch for a given path and store the watch descriptor and path in a hashmap
