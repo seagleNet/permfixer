@@ -48,13 +48,29 @@ fn main() {
 
     // Add watches for configured directories
     for path in perm_mappings.iter().map(|m| &m.path) {
-        if let Some(perm) = map_permission(&perm_mappings, path) {
-            // add configured dir
-            add_watch(&mut inotify, path, &mut watches);
-            chown_and_chmod(perm, path, true);
+        if path.as_path().exists() {
+            if path.is_dir() {
+                if let Some(perm) = map_permission(&perm_mappings, path) {
+                    // add configured dir
+                    add_watch(&mut inotify, path, &mut watches);
+                    chown_and_chmod(perm, path, true);
 
-            // find additional dirs
-            crawl_path(&mut inotify, path, &mut watches, perm);
+                    // find additional dirs
+                    crawl_path(&mut inotify, path, &mut watches, perm);
+                }
+            } else if path.is_file() {
+                eprintln!(
+                    "Failed to add watch for: {}: not a directory, exiting",
+                    path.display()
+                );
+                exit(1);
+            }
+        } else {
+            eprintln!(
+                "Failed to add watch for: {}: no such file or directory, exiting",
+                path.display()
+            );
+            exit(1);
         }
     }
 
