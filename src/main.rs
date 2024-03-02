@@ -1,4 +1,5 @@
 use inotify::{EventMask, Inotify, WatchMask};
+use nix::unistd::Uid;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
@@ -24,7 +25,7 @@ struct Config {
 
 fn main() {
     // Check if the program is run as root
-    if !am_root() {
+    if !Uid::effective().is_root() {
         eprintln!("This program must be run as root");
         exit(1);
     }
@@ -104,14 +105,6 @@ fn main() {
                 watches.remove(&wd_id);
             }
         }
-    }
-}
-
-// Check if the program is run as root
-fn am_root() -> bool {
-    match env::var("USER") {
-        Ok(val) => val == "root",
-        Err(_e) => false,
     }
 }
 

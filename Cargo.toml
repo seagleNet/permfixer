@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+nix = { version = "0.28", features = ["user"] }
 sequential-test = "0.2"
 
 [dependencies.inotify]
