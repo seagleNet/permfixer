@@ -3,17 +3,27 @@ name = "permfixer"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+sequential-test = "0.2"
+
+[dependencies.inotify]
+version = "0.10"
+default-features = false
+features = []
+
+[dependencies.serde]
+version = "1.0"
+default-features = false
+features = ["derive"]
+
+[dependencies.toml]
+version = "0.8"
+default-features = false
+features = ["parse"]
+
 [profile.release]
 strip = true
 opt-level = "z"
 lto = true
 codegen-units = 1
 panic = "abort"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-inotify = "0.10"
-sequential-test = "0.2.4"
-serde = { version = "1.0", features = ["derive"] }
-toml = "0.8"
