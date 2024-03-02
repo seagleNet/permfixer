@@ -51,11 +51,11 @@ fn main() {
         if path.as_path().exists() {
             if path.is_dir() {
                 if let Some(perm) = map_permission(&perm_mappings, path) {
-                    // add configured dir
+                    // Add configured dir to watches and set permissions
                     add_watch(&mut inotify, path, &mut watches);
                     chown_and_chmod(perm, path, true);
 
-                    // find additional dirs
+                    // Crawl the directory and add watches for all subdirectories
                     crawl_path(&mut inotify, path, &mut watches, perm);
                 }
             } else if path.is_file() {
