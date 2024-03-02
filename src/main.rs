@@ -59,6 +59,12 @@ fn main() {
 
     // Start event loop
     loop {
+        // Check if there are any watches left
+        if watches.is_empty() {
+            eprintln!("No watches left, exiting");
+            break;
+        }
+
         // Read events from inotify
         let events = inotify
             .read_events_blocking(&mut buffer)
