@@ -32,6 +32,10 @@ fn main() {
 
     // Read config file path from command line
     let args: Vec<String> = env::args().collect();
+    if args.len() != 2 {
+        eprintln!("Usage: {} <config file>", args[0]);
+        exit(1);
+    }
     let config_path = &args[1];
 
     // Parse config file
