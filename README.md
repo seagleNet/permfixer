@@ -2,19 +2,48 @@
 
 [![woodpecker-ci](https://ci.seagle.sh/api/badges/1/status.svg)](https://ci.seagle.sh/repos/1)
 
-A little tool that watches directories and makes sure all files and directories are in line with the configured owner, group and mode.
+A little program that watches directories recursively and makes sure all files and directories are in line with the configured owner, group and mode. It's only been tested and should only work on linux.
 
-Configuration can be defined in toml format and passed via command argument.
+The program doesn't stop until it's killed or if all watched directories have been deleted. The program can also be started with as a systemd service - see an example below.
 
-Config file example:
+Some log is written into stdout/stderr.
+
+## Usage
+
+Since the program needs to be able to execute `chown` it needs to be run as root.
+
+```bash
+permfixer <config file>
+```
+
+Examples:
+
+```bash
+# Running in foreground
+sudo /bin/permfixer /etc/permfixer.toml
+# Running in background
+nohup sudo /bin/permfixer /etc/permfixer.toml &
+```
+
+When you want to stop the program simply kill it:
+
+```bash
+sudo pkill permfixer
+```
+
+## Configuration
+
+Configuration needs to be defined in a toml file and passed via command argument.
+
+An example of a config could look something like this:
 
 ```toml
-[[perm_mapping]]
-path = "/var/opt/transfer/input"
-uid = 1001
-gid = 1001
-fmode = 0o640
-dmode = 0o750
+[[perm_mapping]]                  # Config array
+path = "/var/opt/transfer/input"  # Path to watch recursively
+uid = 1001                        # User's ID for chown
+gid = 1001                        # Group's ID for chgrp
+fmode = 0o640                     # Permissions in octal format for files
+dmode = 0o750                     # Permissions in octal format for direcotires
 
 [[perm_mapping]]
 path = "/var/opt/share"
@@ -24,8 +53,33 @@ fmode = 0o600
 dmode = 0o700
 ```
 
-Command example:
+## Installation
 
 ```bash
-./permfixer config.toml
+cargo install --git https://git.seagle.sh/seagle/permfixer.git
+sudo install -v -o root -g root -m 755 ~/.cargo/bin/permfixer /bin
 ```
+
+## Systemd unit example
+
+An example of a systemd service file.
+
+```ini
+[Unit]
+Description=Run permfixer
+
+[Service]
+User=root
+ExecStart=/path/to/permfixer /path/to/config.toml
+
+[Install]
+WantedBy=multi-user.target
+```
+
+For further information check the man pages of `systemd`, `systemd.unit`, `systemd.service` etc.
+
+## Disclaimer
+
+I tested this software as thoroughly as possible, however, there could sill be issues I might have missed. Make sure your config file makes sense and that you only target directories you intend to. There could be undesired consequences or you could even brick your system if you're not being careful.
+
+Use this program at your own risk.
