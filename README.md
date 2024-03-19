@@ -2,11 +2,11 @@
 
 [![woodpecker-ci](https://ci.seagle.sh/api/badges/1/status.svg)](https://ci.seagle.sh/repos/1)
 
-A little program that watches directories recursively and makes sure all files and directories are in line with the configured owner, group and mode. It's only been tested and should only work on linux.
+A little program that watches directories recursively and makes sure all files and directories are in line with the configured owner, group and mode. It's been written for Linux specifically and does not work on any other OS.
 
-The program doesn't stop until it's killed or if all watched directories have been deleted. The program can also be started with as a systemd service - see an example below.
+The program doesn't stop until it's killed or if all watched directories have been deleted. It can also be started as a systemd service - see the example below.
 
-Some log is written into stdout/stderr.
+Logs are written to stdout/stderr.
 
 ## Usage
 
@@ -55,6 +55,8 @@ dmode = 0o700
 
 ## Installation
 
+Make sure you have the cargo and all the prerequisites to build rust applications installed on your system. Then simply run the following commands to build and install permfixer:
+
 ```bash
 cargo install --git https://git.seagle.sh/seagle/permfixer.git
 sudo install -v -o root -g root -m 755 ~/.cargo/bin/permfixer /bin
@@ -80,6 +82,6 @@ For further information check the man pages of `systemd`, `systemd.unit`, `syste
 
 ## Disclaimer
 
-I tested this software as thoroughly as possible, however, there could sill be issues I might have missed. Make sure your config file makes sense and that you only target directories you intend to. There could be undesired consequences or you could even brick your system if you're not being careful.
+I tested this software as thoroughly as possible, however, there could still be issues I might have missed. Make sure your config file makes sense and that you only target directories you intend to. There could be undesired consequences or you could even brick your system if you're not being careful.
 
 Use this program at your own risk.
