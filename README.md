@@ -1,7 +1,5 @@
 # permfixer
 
-[![woodpecker-ci](https://ci.seagle.sh/api/badges/1/status.svg)](https://ci.seagle.sh/repos/1)
-
 A little program that watches directories recursively and makes sure all files and directories are in line with the configured owner, group and mode. It's been written for Linux specifically and does not work on any other OS.
 
 The program doesn't stop until it's killed or if all watched directories have been deleted. It can also be started as a systemd service - see the example below.
