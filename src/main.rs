@@ -123,8 +123,24 @@ fn main() {
             let path = PathBuf::from(p).join(event.name.unwrap_or_default());
 
             // Process events depending on the event mask
-            if event.mask.contains(EventMask::CREATE) || event.mask.contains(EventMask::MOVED_TO) {
-                // Handle file or directory creation and moved to events
+            if event.mask.contains(EventMask::CREATE) && event.mask.contains(EventMask::ISDIR) {
+                // Handle directory creation events
+                if let Some(perm) = map_permission(&perm_mappings, &path) {
+                    println!("Directory created: {}", path.display());
+                    add_watch(&mut inotify, &path, &mut watches);
+                    chown_and_chmod(perm, &path, true);
+                    crawl_path(&mut inotify, &path, &mut watches, perm);
+                }
+            } else if event.mask.contains(EventMask::CLOSE_WRITE)
+                && !event.mask.contains(EventMask::ISDIR)
+            {
+                // Handle file write events
+                if let Some(perm) = map_permission(&perm_mappings, &path) {
+                    println!("File written: {}", path.display());
+                    chown_and_chmod(perm, &path, false);
+                }
+            } else if event.mask.contains(EventMask::MOVED_TO) {
+                // Handle file or directory move events
                 if let Some(perm) = map_permission(&perm_mappings, &path) {
                     if event.mask.contains(EventMask::ISDIR) {
                         println!("Directory created: {}", path.display());
@@ -163,7 +179,7 @@ fn add_watch(inotify: &mut Inotify, path: &PathBuf, watches: &mut HashMap<i32, P
         .watches()
         .add(
             path,
-            WatchMask::CREATE | WatchMask::DELETE | WatchMask::MOVED_TO,
+            WatchMask::CREATE | WatchMask::DELETE | WatchMask::MOVED_TO | WatchMask::CLOSE_WRITE,
         )
         .expect("Failed to add file watch");
     let wd_id = new_watch.get_watch_descriptor_id();
