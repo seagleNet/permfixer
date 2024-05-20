@@ -143,12 +143,12 @@ fn main() {
                 // Handle file or directory move events
                 if let Some(perm) = map_permission(&perm_mappings, &path) {
                     if event.mask.contains(EventMask::ISDIR) {
-                        println!("Directory created: {}", path.display());
+                        println!("Directory moved: {}", path.display());
                         add_watch(&mut inotify, &path, &mut watches);
                         chown_and_chmod(perm, &path, true);
                         crawl_path(&mut inotify, &path, &mut watches, perm);
                     } else {
-                        println!("File created: {}", path.display());
+                        println!("File moved: {}", path.display());
                         chown_and_chmod(perm, &path, false);
                     }
                 }
