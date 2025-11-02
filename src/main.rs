@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::env;
 use std::fs::{self, set_permissions};
-use std::os::unix::fs::{chown, PermissionsExt};
+use std::os::unix::fs::{PermissionsExt, chown};
 use std::path::{Path, PathBuf};
 use std::process::exit;
 
@@ -251,7 +251,7 @@ mod test {
     use super::*;
     use sequential_test::{parallel, sequential};
     use std::{
-        fs::{create_dir, create_dir_all, remove_dir, remove_dir_all, remove_file, File},
+        fs::{File, create_dir, create_dir_all, remove_dir, remove_dir_all, remove_file},
         os::linux::fs::MetadataExt,
     };
 
